@@ -1,0 +1,18 @@
+circle {
+    fill: steelblue;
+    stroke: black;
+    stroke-width: 2px;
+}
+
+/* Stili CSS per gli assi */
+.axis path,
+.axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges;
+}
+
+.axis text {
+    font-family: sans-serif;
+    font-size: 10px;
+}
