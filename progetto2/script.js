@@ -1,29 +1,38 @@
 d3.json("data.json").then(function(dataset) {
     const width = 500;
     const height = 500;
-    const margin = { top: 20, right: 20, bottom: 20, left: 30 };
+    const margin = { top: 40, right: 40, bottom: 40, left: 40 };
     const innerWidth = width - margin.left - margin.right;
     const innerHeight = height - margin.top - margin.bottom;
 
-    // Funzione per creare le scale
+    // Definizione del range fisso per le scale
+    const xRange = [0, innerWidth];
+    const yRange = [innerHeight, 0];
+    const radiusRange = [5, 20];
+
+    // Funzione per creare le scale con un dominio arbitrario
     function createScales(dataset) {
-        const maxRadius = d3.max(dataset, d => d.v3);
-        const xMax = d3.max(dataset, d => d.v1) + maxRadius + 10;
-        const yMax = d3.max(dataset, d => d.v2) + maxRadius + 10;
-        const xMin = d3.min(dataset, d => d.v1) - maxRadius - 10;
-        const yMin = d3.min(dataset, d => d.v2) - maxRadius - 10;
+        const xMin = d3.min(dataset, d => d.v1);
+        const xMax = d3.max(dataset, d => d.v1);
+        const yMin = d3.min(dataset, d => d.v2);
+        const yMax = d3.max(dataset, d => d.v2);
+        const rMin = d3.min(dataset, d => d.v3);
+        const rMax = d3.max(dataset, d => d.v3);
 
-        // Creazione della scala X
+        const radiusScale = d3.scaleLinear()
+            .domain([rMin, rMax])
+            .range(radiusRange);
+
+        // Adjust domains to ensure circles do not cover axes
         const xScale = d3.scaleLinear()
-            .domain([xMin, xMax])
-            .range([0, innerWidth]);
+            .domain([xMin - rMax, xMax + rMax])
+            .range(xRange);
 
-        // Creazione della scala Y
         const yScale = d3.scaleLinear()
-            .domain([yMin, yMax])
-            .range([innerHeight, 0]);
+            .domain([yMin - rMax, yMax + rMax])
+            .range(yRange);
 
-        return { xScale, yScale };
+        return { xScale, yScale, radiusScale };
     }
 
     // Funzione per creare gli assi
@@ -34,7 +43,7 @@ d3.json("data.json").then(function(dataset) {
     }
 
     // Creazione delle scale e degli assi iniziali
-    let { xScale, yScale } = createScales(dataset);
+    let { xScale, yScale, radiusScale } = createScales(dataset);
     let { xAxis, yAxis } = createAxes({ xScale, yScale });
 
     // Creazione dell'SVG e del gruppo contenitore
@@ -58,7 +67,7 @@ d3.json("data.json").then(function(dataset) {
     // Funzione per aggiornare il grafico
     function updateChart() {
         // Ricalcola le scale e gli assi
-        ({ xScale, yScale } = createScales(dataset));
+        ({ xScale, yScale, radiusScale } = createScales(dataset));
         ({ xAxis, yAxis } = createAxes({ xScale, yScale }));
 
         // Aggiorna gli assi con transizioni animate
@@ -79,7 +88,7 @@ d3.json("data.json").then(function(dataset) {
             .duration(1000)
             .attr("cx", d => xScale(d.v1))
             .attr("cy", d => yScale(d.v2))
-            .attr("r", d => d.v3);
+            .attr("r", d => radiusScale(d.v3));
     }
 
     // Gestione dei click sugli assi per aggiornare i cerchi
@@ -110,7 +119,7 @@ d3.json("data.json").then(function(dataset) {
         .append("circle")
         .attr("cx", d => xScale(d.v1))
         .attr("cy", d => yScale(d.v2))
-        .attr("r", d => d.v3)
+        .attr("r", d => radiusScale(d.v3))
         .attr("fill", "steelblue")
         .attr("stroke", "black")
         .attr("stroke-width", 2);
